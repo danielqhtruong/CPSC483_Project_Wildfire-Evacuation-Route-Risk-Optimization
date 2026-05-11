@@ -11,8 +11,8 @@ perimeters file.
 Usage
 -----
     python predict.py                              # all LA fires in the saved dataset
-    python predict.py --fire WOOLSEY              # single named fire
-    python predict.py --fire WOOLSEY --year 2018  # name + year
+    python predict.py --fire EATON              # single named fire
+    python predict.py --fire EATON --year 2025  # name + year
     python predict.py --fire EATON --year 2025 --out outputs/maps/eaton.html
 """
 
