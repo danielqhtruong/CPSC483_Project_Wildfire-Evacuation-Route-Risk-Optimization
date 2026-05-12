@@ -40,7 +40,7 @@ The system produces an actionable, data-driven vulnerability assessment across a
 ### Risk Classifier
 
 - **Model:** Random Forest (`n_estimators=200`, `max_depth=10`, `class_weight=balanced`)
-- **Target:** 3-class risk label — Low [0–0.33), Moderate [0.33–0.66), High [0.66–1.0]
+- **Target:** 3-class risk label — Low [0–0.25), Moderate [0.25–0.5), High [0.5–0.75), Critical [0.75–1.0]
 - **Validation:** 5-fold cross-validation, 80/20 train-test split
 - **Explainability:** SHAP feature importance
 
@@ -54,33 +54,49 @@ The system produces an actionable, data-driven vulnerability assessment across a
 
 ## Setup & Usage
 
-### 1. Install dependencies
+### Run the full pipeline (recommended)
 
-```bash
-# Python >= 3.10 recommended
-pip install -r requirements.txt
+# Full pipeline: install deps → data processing → ML training
+python run_pipeline.py
+
+# Skip pip install if dependencies are already installed
+python run_pipeline.py --skip-install
+
+# Run only the data processing notebooks
+python run_pipeline.py --only data
+
+# Run only the ML pipeline notebooks
+python run_pipeline.py --only ml
 ```
 
-### 2. Process raw data (run once)
+`run_pipeline.py` executes the following stages in order:
 
-Run notebooks in `src/data_processing/` in any order — each is independent:
-
-### 3. Run the ML pipeline
-
-Run notebooks in `notebooks/` in order:
+**Stage 1 — Data Processing** (`src/data_processing/`, run once):
 ```
-1. exploration.ipynb        — understand the data
+CensusTract_SVI.ipynb
+Escape_Route.ipynb
+FireHydrants.ipynb
+FireStations.ipynb
+Historic_Wildfire.ipynb
+Hospital.ipynb
+```
+
+**Stage 2 — ML Pipeline** (`notebooks/`):
+```
+1. exploration.ipynb         — understand the data
 2. feature_engineering.ipynb — build features.geojson
-3. model_trainning.ipynb    — train model, save risk_classifier.pkl
-4. implementation/visualizations.ipynb     — generate maps in outputs/maps/
-5. implementation/predict.py            — compare model to historic wildfire data wjtb generate maps in outputs/maps/
-6.  implementation/simulate_fire.py         — compare model to random spawn wildfire data wjtb generate maps in outputs/maps/
+3. model_trainning.ipynb     — train model, save risk_classifier.pkl
 ```
 
-### 4. View outputs
+**Stage 3 — Outputs** (run manually after the pipeline):
+```bash
+python implementation/predict.py    # compare model to historic wildfire data
+python implementation/simulate.py   # compare model to random spawn wildfire data
+```
+
+### View outputs
 Open any of the generated HTML maps directly in a browser:
 ```
 outputs/maps/01_risk_choropleth.html
 outputs/maps/02_risk_with_infrastructure.html
-outputs/maps/03_evacuation_route.html
 ```
