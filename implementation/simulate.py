@@ -12,10 +12,10 @@ Given a suburb name or lat/lon, the script:
 
 Usage
 -----
-    python simulate_fire.py --suburb "Chatsworth"
-    python simulate_fire.py --suburb "Malibu" --radius 8
-    python simulate_fire.py --lat 34.17 --lon -118.60 --radius 6
-    python simulate_fire.py --suburb "Altadena" --radius 5 --out outputs/maps/sim_altadena.html
+    python simulate.py --suburb "Chatsworth"
+    python simulate.py --suburb "Malibu" --radius 8
+    python simulate.py --lat 34.17 --lon -118.60 --radius 6
+    python simulate.py --suburb "Altadena" --radius 5 --out outputs/maps/sim_altadena.html
 """
 
 import argparse
@@ -33,7 +33,7 @@ from shapely.geometry import Point
 # Paths & constants
 # ---------------------------------------------------------------------------
 
-ROOT = Path(__file__).parent
+ROOT = Path(__file__).parent.parent
 DATA = ROOT / "data" / "processed"
 MODEL_DIR = ROOT / "outputs" / "models"
 MAP_DIR = ROOT / "outputs" / "maps"
@@ -53,8 +53,13 @@ FEATURES = [
     "rpl_theme_4",
 ]
 
-TIER_LABELS = {0: "Low", 1: "Medium", 2: "High"}
-TIER_COLORS = {"Low": "#2ca02c", "Medium": "#ff7f0e", "High": "#d62728"}
+TIER_LABELS = {0: "Low", 1: "Medium", 2: "High", 3: "Critical"}
+TIER_COLORS = {
+    "Low":      "#2ecc71",   # green
+    "Medium":   "#f1c40f",   # yellow
+    "High":     "#e67e22",   # orange
+    "Critical": "#e74c3c",   # red
+}
 
 ZONE_ORDER  = ["fire_zone", "immediate", "nearby"]
 ZONE_OPACITY = {"fire_zone": 0.85, "immediate": 0.65, "nearby": 0.45}
@@ -175,13 +180,14 @@ def print_report(tracts: gpd.GeoDataFrame, suburb: str, radius_km: float) -> Non
         if subset.empty:
             continue
 
-        counts = subset["predicted_label"].value_counts()
-        high   = counts.get("High",   0)
-        med    = counts.get("Medium", 0)
-        low    = counts.get("Low",    0)
+        counts    = subset["predicted_label"].value_counts()
+        critical  = counts.get("Critical", 0)
+        high      = counts.get("High",     0)
+        med       = counts.get("Medium",   0)
+        low       = counts.get("Low",      0)
 
         print(f"\n  {zone_labels[zone_key]}")
-        print(f"  Total tracts: {len(subset)}   High: {high}   Medium: {med}   Low: {low}")
+        print(f"  Total tracts: {len(subset)}   Critical: {critical}   High: {high}   Medium: {med}   Low: {low}")
         print(f"  {'Tract':<14} {'Risk':<10} {'Dist (km)':<12} {'Pop/km²':<12} {'SVI Rank':<10}")
         print(f"  {'-'*57}")
 
@@ -193,26 +199,27 @@ def print_report(tracts: gpd.GeoDataFrame, suburb: str, radius_km: float) -> Non
             # Average across the 4 SVI theme percentiles as a composite vulnerability
             svi_cols = ["rpl_theme_1", "rpl_theme_2", "rpl_theme_3", "rpl_theme_4"]
             svi_avg  = row[svi_cols].mean() if all(c in row.index for c in svi_cols) else float("nan")
-            flag     = " ⚠" if tier == "High" and svi_avg >= 0.75 else ""
+            flag     = " ⚠" if tier in ("High", "Critical") and svi_avg >= 0.75 else ""
             print(
                 f"  {tract_id:<14} {tier:<10} {dist_km:<12.1f} "
                 f"{pop:<12.0f} {svi_avg:<10.3f}{flag}"
             )
 
-    total = len(in_scope)
-    high_total = (in_scope["predicted_label"] == "High").sum()
+    total          = len(in_scope)
+    critical_total = (in_scope["predicted_label"] == "Critical").sum()
+    high_total     = (in_scope["predicted_label"] == "High").sum()
 
     print(f"\n  SUMMARY")
     print(f"  {'─'*40}")
-    for tier in ["High", "Medium", "Low"]:
+    for tier in ["Critical", "High", "Medium", "Low"]:
         n = (in_scope["predicted_label"] == tier).sum()
         bar = "█" * int(20 * n / max(total, 1))
-        print(f"  {tier:<8} {bar:<21} {n:>4} tracts ({100*n/max(total,1):.1f}%)")
+        print(f"  {tier:<10} {bar:<21} {n:>4} tracts ({100*n/max(total,1):.1f}%)")
     print(f"  {'─'*40}")
     print(f"  Total in analysis area: {total} tracts")
     print(
-        f"\n  ⚠  {high_total} High-risk tract(s) within {3*radius_km:.0f} km "
-        f"of the simulated ignition point."
+        f"\n  ⚠  {critical_total} Critical and {high_total} High-risk tract(s) within "
+        f"{3*radius_km:.0f} km of the simulated ignition point."
     )
 
 

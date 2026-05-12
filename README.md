@@ -1,5 +1,13 @@
 # Wildfire Evacuation Route & Risk Optimization
 
+## Problem Statement
+
+Wildfires in Los Angeles County pose a severe and growing threat to life and infrastructure. Emergency responders and city planners currently lack a systematic, data-driven way to identify *which* communities are most vulnerable before a fire ignites — and *which* roads should be prioritized for evacuation once one does.
+
+This project addresses that gap through supervised machine learning. Given socioeconomic vulnerability data (CDC Social Vulnerability Index) and spatial infrastructure features (fire station proximity, road density, hydrant coverage), we train a classifier to assign each of the **2,493 LA County census tracts** one of four risk tiers:
+
+## Proposed Solution
+
 A Machine Learning project designed to identify high-risk communities and optimize evacuation routes during wildfire events in Los Angeles County.
 The problems divide in 3 sub-problems 
 1. Risk Classifier for Vulnerable Neighborhoods
